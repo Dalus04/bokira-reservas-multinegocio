@@ -1,0 +1,506 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// =====================================
+// ENUMS
+// =====================================
+enum GlobalRole {
+  USER
+  ADMIN
+}
+
+enum BusinessRole {
+  STAFF
+  MANAGER
+}
+
+enum BusinessStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum ReviewStatus {
+  PUBLISHED
+  HIDDEN
+}
+
+enum NotificationType {
+  BOOKING_REMINDER_24H
+  BOOKING_REMINDER_TODAY_8AM
+}
+
+enum NotificationChannel {
+  EMAIL
+  WHATSAPP
+  PUSH
+}
+
+enum NotificationStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum AuditEntityType {
+  BUSINESS
+  SERVICE
+  BOOKING
+  REVIEW
+  MEMBER
+  HOURS
+  TIME_OFF
+  NOTIFICATION_JOB
+  LOYALTY
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  SUBMIT_REVIEW
+  APPROVE
+  REJECT
+  SUSPEND
+  CANCEL
+  CONFIRM
+  COMPLETE
+  NO_SHOW
+  RESCHEDULE
+  ASSIGN_STAFF
+}
+
+enum LoyaltyReason {
+  BOOKING_COMPLETED
+  MANUAL_ADJUSTMENT
+  PROMO
+  REFUND
+}
+
+// =====================================
+// USERS
+// =====================================
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  name         String
+  phone        String?
+  globalRole   GlobalRole @default(USER)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  ownedBusinesses     Business[]       @relation("BusinessOwner")
+  businessMemberships BusinessMember[]
+
+  customerBookings Booking[] @relation("BookingCustomer")
+  staffBookings    Booking[] @relation("BookingStaff")
+
+  reviews Review[]
+
+  timeOffAsStaff TimeOff[] @relation("TimeOffStaff")
+
+  reviewedBusinesses Business[]          @relation("BusinessReviewedBy")
+  notificationJobs   NotificationJob[]
+  staffWorkingHours  StaffWorkingHours[]
+
+  loyaltyAccounts LoyaltyAccount[]
+  auditLogs       AuditLog[]       @relation("AuditActor")
+
+  @@index([globalRole])
+  @@index([isActive])
+}
+
+// =====================================
+// PLATFORM: CATEGORIES GLOBALES (DE LA WEB)
+// =====================================
+model PlatformCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  businesses Business[]
+}
+
+// =====================================
+// BUSINESS (VALIDACIÓN + MULTINEGOCIO)
+// =====================================
+model Business {
+  id      String @id @default(cuid())
+  ownerId String
+
+  platformCategoryId String
+  status             BusinessStatus @default(DRAFT)
+  reviewedByAdminId  String?
+  approvedAt         DateTime?
+  rejectedReason     String?
+
+  name        String
+  slug        String  @unique
+  description String?
+  address     String?
+  city        String?
+  phone       String?
+  imageUrl    String?
+
+  timezone String  @default("America/Lima")
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner            User             @relation("BusinessOwner", fields: [ownerId], references: [id])
+  platformCategory PlatformCategory @relation(fields: [platformCategoryId], references: [id])
+  reviewedByAdmin  User?            @relation("BusinessReviewedBy", fields: [reviewedByAdminId], references: [id])
+
+  members    BusinessMember[]
+  hours      BusinessHours[]
+  staffHours StaffWorkingHours[]
+  timeOff    TimeOff[]
+
+  serviceCategories ServiceCategory[]
+  services          Service[]
+
+  bookings Booking[]
+  reviews  Review[]
+
+  loyaltyAccounts LoyaltyAccount[]
+  auditLogs       AuditLog[]       @relation("AuditBusiness")
+
+  @@index([ownerId])
+  @@index([platformCategoryId])
+  @@index([status])
+  @@index([isActive])
+}
+
+// =====================================
+// MEMBERSHIP (ROL POR NEGOCIO)
+// =====================================
+model BusinessMember {
+  id         String @id @default(cuid())
+  businessId String
+  userId     String
+
+  role      BusinessRole @default(STAFF)
+  isActive  Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  deletedAt DateTime?
+
+  business Business @relation(fields: [businessId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([businessId, userId])
+  @@index([businessId])
+  @@index([userId])
+  @@index([isActive])
+  @@index([businessId, deletedAt])
+}
+
+// =====================================
+// CATEGORIES INTERNAS DEL NEGOCIO (PARA AGRUPAR SERVICIOS)
+// =====================================
+model ServiceCategory {
+  id         String    @id @default(cuid())
+  businessId String
+  name       String
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime?
+
+  business Business  @relation(fields: [businessId], references: [id])
+  services Service[]
+
+  @@unique([businessId, name])
+  @@index([businessId])
+  @@index([businessId, deletedAt])
+}
+
+// =====================================
+// SERVICES
+// =====================================
+model Service {
+  id                String  @id @default(cuid())
+  businessId        String
+  serviceCategoryId String?
+
+  name        String
+  description String?
+  price       Decimal
+  durationMin Int
+  imageUrl    String?
+
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  business        Business         @relation(fields: [businessId], references: [id])
+  serviceCategory ServiceCategory? @relation(fields: [serviceCategoryId], references: [id])
+
+  bookings Booking[]
+  reviews  Review[]
+
+  @@index([businessId])
+  @@index([serviceCategoryId])
+  @@index([isActive])
+  @@index([businessId, deletedAt])
+}
+
+// =====================================
+// BUSINESS HOURS (PLANTILLA SEMANAL DEL NEGOCIO)
+// =====================================
+model BusinessHours {
+  id         String @id @default(cuid())
+  businessId String
+
+  // 0=Sunday ... 6=Saturday
+  dayOfWeek Int
+  openTime  String // "09:00"
+  closeTime String // "18:00"
+  isClosed  Boolean @default(false)
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@unique([businessId, dayOfWeek])
+  @@index([businessId])
+}
+
+// =====================================
+// STAFF WORKING HOURS (PLANTILLA SEMANAL POR STAFF)
+// =====================================
+model StaffWorkingHours {
+  id         String @id @default(cuid())
+  businessId String
+  staffId    String
+
+  dayOfWeek Int
+  startTime String // "09:00"
+  endTime   String // "18:00"
+  isOff     Boolean @default(false)
+
+  business Business @relation(fields: [businessId], references: [id])
+  staff    User     @relation(fields: [staffId], references: [id])
+
+  @@unique([businessId, staffId, dayOfWeek])
+  @@index([businessId])
+  @@index([staffId])
+}
+
+// =====================================
+// TIME OFF / BLOCKS (RANGOS CONCRETOS)
+// - staffId null => bloqueo negocio completo
+// - staffId != null => bloqueo de ese staff
+// =====================================
+model TimeOff {
+  id         String  @id @default(cuid())
+  businessId String
+  staffId    String?
+
+  startAt DateTime
+  endAt   DateTime
+  reason  String?
+
+  createdAt DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id])
+  staff    User?    @relation("TimeOffStaff", fields: [staffId], references: [id])
+
+  @@index([businessId, startAt])
+  @@index([staffId, startAt])
+}
+
+// =====================================
+// BOOKINGS
+// - staffId opcional (MVP sin asignación obligatoria)
+// =====================================
+model Booking {
+  id         String  @id @default(cuid())
+  customerId String
+  businessId String
+  serviceId  String
+  staffId    String?
+
+  startAt DateTime
+  endAt   DateTime
+
+  status BookingStatus @default(PENDING)
+  notes  String?
+
+  ownerConfirmNote      String?
+  ownerCancelReason     String?
+  ownerRescheduleReason String?
+  statusUpdatedById     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer User  @relation("BookingCustomer", fields: [customerId], references: [id])
+  staff    User? @relation("BookingStaff", fields: [staffId], references: [id])
+
+  business Business @relation(fields: [businessId], references: [id])
+  service  Service  @relation(fields: [serviceId], references: [id])
+
+  review           Review?
+  notificationJobs NotificationJob[]
+
+  @@index([businessId, startAt])
+  @@index([staffId, startAt])
+  @@index([customerId, startAt])
+  @@index([serviceId, startAt])
+  @@index([businessId, status, startAt])
+}
+
+// =====================================
+// REVIEWS
+// - Siempre con bookingId (prueba de que reservó)
+// - serviceId opcional: si viene => reseña al servicio reservado
+// - si no viene => reseña al negocio
+// =====================================
+model Review {
+  id         String  @id @default(cuid())
+  customerId String
+  businessId String
+  bookingId  String  @unique
+  serviceId  String?
+
+  rating  Int
+  comment String?
+  status  ReviewStatus @default(PUBLISHED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer User     @relation(fields: [customerId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+  booking  Booking  @relation(fields: [bookingId], references: [id])
+  service  Service? @relation(fields: [serviceId], references: [id])
+
+  @@index([businessId, createdAt])
+  @@index([serviceId, createdAt])
+  @@index([status])
+}
+
+// =====================================
+// NOTIFICATIONS (AUTOMÁTICAS)
+// - Jobs: 24h antes y el mismo día 8am
+// - Evita duplicados con @@unique(type, bookingId, channel)
+// =====================================
+model NotificationJob {
+  id      String              @id @default(cuid())
+  type    NotificationType
+  channel NotificationChannel @default(EMAIL)
+
+  bookingId String
+  userId    String
+
+  sendAt DateTime
+  status NotificationStatus @default(PENDING)
+
+  attempts  Int     @default(0)
+  lastError String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([type, bookingId, channel])
+  @@index([status, sendAt])
+  @@index([userId])
+}
+
+// =====================================
+// LOYALTY (FIDELIZACIÓN DIGITAL BÁSICA)
+// - 1 cuenta por (businessId, customerId)
+// - eventos de puntos (historial)
+// =====================================
+model LoyaltyAccount {
+  id         String @id @default(cuid())
+  businessId String
+  customerId String
+
+  points    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id])
+  customer User     @relation(fields: [customerId], references: [id])
+
+  events LoyaltyEvent[]
+
+  @@unique([businessId, customerId])
+  @@index([businessId])
+  @@index([customerId])
+}
+
+model LoyaltyEvent {
+  id        String @id @default(cuid())
+  accountId String
+
+  bookingId   String?
+  reason      LoyaltyReason
+  pointsDelta Int
+  note        String?
+
+  createdAt DateTime @default(now())
+
+  account LoyaltyAccount @relation(fields: [accountId], references: [id])
+
+  @@index([accountId, createdAt])
+  @@index([bookingId])
+}
+
+// =====================================
+// AUDIT LOG (TRAZABILIDAD / SOPORTE)
+// - registra acciones críticas con metadata JSON
+// =====================================
+model AuditLog {
+  id String @id @default(cuid())
+
+  actorUserId String
+  businessId  String?
+
+  entityType AuditEntityType
+  entityId   String
+  action     AuditAction
+
+  metadataJson String?
+  ip           String?
+  userAgent    String?
+
+  createdAt DateTime @default(now())
+
+  actor    User      @relation("AuditActor", fields: [actorUserId], references: [id])
+  business Business? @relation("AuditBusiness", fields: [businessId], references: [id])
+
+  @@index([actorUserId, createdAt])
+  @@index([businessId, createdAt])
+  @@index([entityType, entityId, createdAt])
+}
