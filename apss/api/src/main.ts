@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { HttpStatus, UnprocessableEntityException, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule } from '@nestjs/swagger';
 
@@ -25,7 +25,22 @@ async function bootstrap() {
       whitelist: true,
       transform: true,
       forbidNonWhitelisted: true,
+      errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
       transformOptions: { enableImplicitConversion: true },
+      exceptionFactory: (errors) => {
+        const details = errors.flatMap((e) => {
+          const constraints = e.constraints ? Object.values(e.constraints) : [];
+          // incluye nested si luego usas objetos anidados
+          if (constraints.length === 0) return [{ field: e.property, message: 'Invalid value' }];
+          return constraints.map((msg) => ({ field: e.property, message: msg }));
+        });
+
+        return new UnprocessableEntityException({
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid request',
+          details,
+        });
+      },
     }),
   );
 

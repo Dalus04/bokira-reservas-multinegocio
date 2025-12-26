@@ -1,21 +1,16 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 
 import { PrismaModule } from './infra/prisma/prisma.module';
-import { EnvService } from './config/env.service';
-
 import { HealthModule } from './modules/health/health.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { AppConfigModule } from './config/config.module';
 
 @Module({
   imports: [
-    // ConfigModule solo para cargar .env; validación real la hace EnvService (zod)
-    ConfigModule.forRoot({ isGlobal: true }),
-
+    AppConfigModule,
     PrismaModule,
-
-    // Features
     HealthModule,
+    AuthModule,
   ],
-  providers: [EnvService],
 })
 export class AppModule { }
