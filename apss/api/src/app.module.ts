@@ -8,6 +8,7 @@ import { PlatformCategoriesModule } from './modules/platform-categories/platform
 import { BusinessesModule } from './modules/businesses/businesses.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { CoreModule } from './common/core/core.module';
+import { AvailabilityModule } from './modules/availability/availability.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { CoreModule } from './common/core/core.module';
     PlatformCategoriesModule,
     BusinessesModule,
     StaffModule,
+    AvailabilityModule,
   ],
 })
 export class AppModule { }
