@@ -10,6 +10,7 @@ import { StaffModule } from './modules/staff/staff.module';
 import { CoreModule } from './common/core/core.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
+import { ServicesModule } from './modules/services/services.module';
 
 @Module({
   imports: [
@@ -22,7 +23,8 @@ import { BookingsModule } from './modules/bookings/bookings.module';
     BusinessesModule,
     StaffModule,
     AvailabilityModule,
-    BookingsModule
+    BookingsModule,
+    ServicesModule,
   ],
 })
 export class AppModule { }
