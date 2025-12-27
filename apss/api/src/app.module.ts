@@ -12,6 +12,7 @@ import { AvailabilityModule } from './modules/availability/availability.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { ServicesModule } from './modules/services/services.module';
 import { ServiceCategoriesModule } from './modules/service-categories/service-categories.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ServiceCategoriesModule } from './modules/service-categories/service-ca
     BookingsModule,
     ServicesModule,
     ServiceCategoriesModule,
+    ReviewsModule,
   ],
 })
 export class AppModule { }
