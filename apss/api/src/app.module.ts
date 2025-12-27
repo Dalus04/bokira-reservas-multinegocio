@@ -9,6 +9,7 @@ import { BusinessesModule } from './modules/businesses/businesses.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { CoreModule } from './common/core/core.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
+import { BookingsModule } from './modules/bookings/bookings.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { AvailabilityModule } from './modules/availability/availability.module';
     BusinessesModule,
     StaffModule,
     AvailabilityModule,
+    BookingsModule
   ],
 })
 export class AppModule { }

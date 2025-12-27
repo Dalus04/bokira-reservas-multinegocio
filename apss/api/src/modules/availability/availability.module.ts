@@ -54,5 +54,6 @@ import { servicesRepoProvider } from '../../infra/prisma/repositories/services.r
         ServicesPrismaRepo,
         servicesRepoProvider,
     ],
+    exports: [GetAvailabilitySlotsUseCase],
 })
 export class AvailabilityModule { }
