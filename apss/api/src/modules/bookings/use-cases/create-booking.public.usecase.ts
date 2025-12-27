@@ -3,12 +3,16 @@ import { BOOKINGS_REPO, type BookingsRepoPort } from 'src/model/ports/repositori
 import { SERVICES_REPO, type ServicesRepoPort } from 'src/model/ports/repositories/services.repo.port';
 import { GetAvailabilitySlotsUseCase } from 'src/modules/availability/use-cases/get-availability-slots.usecase';
 
+import { EVENT_BUS, type EventBusPort } from 'src/common/events/event-bus.port';
+import { bookingCreatedEvent } from 'src/model/domain/events/booking-created.event';
+
 @Injectable()
 export class CreateBookingPublicUseCase {
     constructor(
         @Inject(BOOKINGS_REPO) private readonly bookingsRepo: BookingsRepoPort,
         @Inject(SERVICES_REPO) private readonly servicesRepo: ServicesRepoPort,
         private readonly availabilityUC: GetAvailabilitySlotsUseCase,
+        @Inject(EVENT_BUS) private readonly bus: EventBusPort,
     ) { }
 
     async exec(input: {
@@ -54,7 +58,7 @@ export class CreateBookingPublicUseCase {
             throw new BadRequestException({ code: 'BOOKING_OVERLAP', message: 'Time overlaps with an existing booking' });
         }
 
-        return this.bookingsRepo.create({
+        const created = await this.bookingsRepo.create({
             customerId: input.customerId,
             businessId: input.businessId,
             serviceId: input.serviceId,
@@ -63,5 +67,15 @@ export class CreateBookingPublicUseCase {
             endAt,
             notes: input.notes ?? null,
         });
+
+        // Observer: schedule notification jobs, etc.
+        this.bus.publish(
+            bookingCreatedEvent({
+                bookingId: created.id,
+                businessId: created.businessId,
+            }),
+        );
+
+        return created;
     }
 }

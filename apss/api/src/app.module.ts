@@ -13,12 +13,16 @@ import { BookingsModule } from './modules/bookings/bookings.module';
 import { ServicesModule } from './modules/services/services.module';
 import { ServiceCategoriesModule } from './modules/service-categories/service-categories.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { EventsModule } from './common/events/events.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
     AppConfigModule,
     PrismaModule,
     CoreModule,
+    EventsModule,
+    NotificationsModule,
     HealthModule,
     AuthModule,
     PlatformCategoriesModule,
