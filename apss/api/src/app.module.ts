@@ -5,6 +5,7 @@ import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AppConfigModule } from './config/config.module';
 import { PlatformCategoriesModule } from './modules/platform-categories/platform-categories.module';
+import { BusinessesModule } from './modules/businesses/businesses.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { PlatformCategoriesModule } from './modules/platform-categories/platform
     HealthModule,
     AuthModule,
     PlatformCategoriesModule,
+    BusinessesModule,
   ],
 })
 export class AppModule { }
