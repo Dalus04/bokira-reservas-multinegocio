@@ -20,9 +20,21 @@ import { availabilityRepoProvider } from 'src/infra/prisma/repositories/availabi
 import { TimeOffPrismaRepo } from '../../infra/prisma/repositories/time-off.prisma.repo';
 import { timeOffRepoProvider } from '../../infra/prisma/repositories/time-off.repo.provider';
 
+import { AvailabilityPublicController } from './availability.public.controller';
+import { AvailabilityController } from './availability.controller';
+import { GetAvailabilitySlotsUseCase } from './use-cases/get-availability-slots.usecase';
+
+import { ServicesPrismaRepo } from '../../infra/prisma/repositories/services.prisma.repo';
+import { servicesRepoProvider } from '../../infra/prisma/repositories/services.repo.provider';
+
 @Module({
-    controllers: [BusinessHoursController, StaffWorkingHoursController, TimeOffController],
-    providers: [
+    controllers: [
+        BusinessHoursController,
+        StaffWorkingHoursController,
+        TimeOffController,
+        AvailabilityPublicController,
+        AvailabilityController,
+    ], providers: [
         ListBusinessHoursUseCase,
         UpsertBusinessHoursUseCase,
         ListStaffWorkingHoursUseCase,
@@ -36,6 +48,11 @@ import { timeOffRepoProvider } from '../../infra/prisma/repositories/time-off.re
 
         AvailabilityPrismaRepo,
         availabilityRepoProvider,
+
+        GetAvailabilitySlotsUseCase,
+
+        ServicesPrismaRepo,
+        servicesRepoProvider,
     ],
 })
 export class AvailabilityModule { }

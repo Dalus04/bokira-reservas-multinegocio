@@ -9,6 +9,6 @@ export type TenantContext = {
 export const Tenant = createParamDecorator(
     (_: unknown, ctx: ExecutionContext): TenantContext => {
         const req = ctx.switchToHttp().getRequest();
-        return req.tenant;
+        return req.tenant as TenantContext;
     },
 );
