@@ -18,7 +18,10 @@ export class BusinessAccessGuard implements CanActivate {
 
         if (!userId) throw new ForbiddenException();
 
-        if (tenant.ownerId === userId) return true;
+        if (tenant.ownerId === userId) {
+            req.businessRole = 'MANAGER'; 
+            return true;
+        }
 
         const membership = await this.businessRepo.findMembership(
             tenant.businessId,

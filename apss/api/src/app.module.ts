@@ -6,15 +6,19 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AppConfigModule } from './config/config.module';
 import { PlatformCategoriesModule } from './modules/platform-categories/platform-categories.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
+import { StaffModule } from './modules/staff/staff.module';
+import { CoreModule } from './common/core/core.module';
 
 @Module({
   imports: [
     AppConfigModule,
     PrismaModule,
+    CoreModule,
     HealthModule,
     AuthModule,
     PlatformCategoriesModule,
     BusinessesModule,
+    StaffModule,
   ],
 })
 export class AppModule { }
