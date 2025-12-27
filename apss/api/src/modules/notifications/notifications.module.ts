@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { NotificationsAdminController } from './notifications.admin.controller';
+import { NotificationsController } from './notifications.controller';
 
 import { NotificationJobsPrismaRepo } from 'src/infra/prisma/repositories/notification-jobs.prisma.repo';
 import { notificationJobsRepoProvider } from 'src/infra/prisma/repositories/notification-jobs.repo.provider';
@@ -15,14 +16,20 @@ import { CancelBookingNotificationsUseCase } from './use-cases/cancel-booking-no
 
 import { BookingEventsSubscriber } from './subscribers/booking-events.subscriber';
 
+import { ListMyNotificationsUseCase } from './use-cases/list-my-notifications.usecase';
+import { GetMyUnreadCountUseCase } from './use-cases/get-my-unread-count.usecase';
+import { MarkNotificationReadUseCase } from './use-cases/mark-notification-read.usecase';
+
+import { NotificationsCron } from './notifications.cron';
+
 @Module({
-    controllers: [NotificationsAdminController],
+    controllers: [NotificationsAdminController, NotificationsController],
     providers: [
         // repos
         NotificationJobsPrismaRepo,
         notificationJobsRepoProvider,
 
-        // channel sender adapter (Strategy por canal se implementa dentro del adapter / sender)
+        // sender adapter (MVP: log)
         MockNotificationSenderAdapter,
         notificationSenderProvider,
 
@@ -32,8 +39,16 @@ import { BookingEventsSubscriber } from './subscribers/booking-events.subscriber
         ScheduleBookingNotificationsUseCase,
         CancelBookingNotificationsUseCase,
 
+        // user notifications
+        ListMyNotificationsUseCase,
+        GetMyUnreadCountUseCase,
+        MarkNotificationReadUseCase,
+
         // observer
         BookingEventsSubscriber,
+
+        // cron worker (AUTO)
+        NotificationsCron,
     ],
 })
 export class NotificationsModule { }

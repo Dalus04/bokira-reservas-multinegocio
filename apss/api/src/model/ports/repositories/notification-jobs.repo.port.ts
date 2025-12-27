@@ -28,6 +28,9 @@ export type NotificationJobDTO = {
     lastError: string | null;
     createdAt: Date;
     updatedAt: Date;
+
+    // ✅ in-app
+    readAt?: Date | null;
 };
 
 export interface NotificationJobsRepoPort {
@@ -39,11 +42,21 @@ export interface NotificationJobsRepoPort {
     markFailed(jobId: string, error: string): Promise<void>;
     cancelForBooking(bookingId: string): Promise<void>;
 
-    // Para construir mensajes sin que use-case toque Prisma
+    // Contexto para armar mensajes sin Prisma en use-case
     getBookingNotificationContext(bookingId: string): Promise<{
         bookingId: string;
         startAt: Date;
         customerId: string;
         business: { id: string; timezone: string; isActive: boolean; status: string };
     } | null>;
+
+    // IN-APP (campana)
+    listForUser(input: {
+        userId: string;
+        page: number;
+        limit: number;
+        status?: NotificationStatus;
+    }): Promise<{ items: NotificationJobDTO[]; total: number }>;
+    countUnreadForUser(input: { userId: string }): Promise<number>
+    markRead(input: { userId: string; jobId: string }): Promise<void>;
 }

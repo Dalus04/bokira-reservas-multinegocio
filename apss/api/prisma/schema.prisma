@@ -422,6 +422,8 @@ model NotificationJob {
   sendAt DateTime
   status NotificationStatus @default(PENDING)
 
+  readAt DateTime?
+
   attempts  Int     @default(0)
   lastError String?
 
