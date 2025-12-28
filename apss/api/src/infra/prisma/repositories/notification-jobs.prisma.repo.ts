@@ -1,12 +1,15 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+
 import {
     NotificationChannel as DbChannel,
     NotificationStatus as DbStatus,
     NotificationType as DbType,
+    NotificationAudience as DbAudience,
 } from 'generated/prisma/enums';
 
 import {
+    NotificationAudience,
     NotificationChannel,
     NotificationStatus,
     NotificationType,
@@ -22,10 +25,12 @@ import type {
 const toDbType = (t: NotificationType): DbType => t as unknown as DbType;
 const toDbChannel = (c: NotificationChannel): DbChannel => c as unknown as DbChannel;
 const toDbStatus = (s: NotificationStatus): DbStatus => s as unknown as DbStatus;
+const toDbAudience = (a: NotificationAudience): DbAudience => a as unknown as DbAudience;
 
 const fromDbType = (t: DbType): NotificationType => t as unknown as NotificationType;
 const fromDbChannel = (c: DbChannel): NotificationChannel => c as unknown as NotificationChannel;
 const fromDbStatus = (s: DbStatus): NotificationStatus => s as unknown as NotificationStatus;
+const fromDbAudience = (a: DbAudience): NotificationAudience => a as unknown as NotificationAudience;
 
 @Injectable()
 export class NotificationJobsPrismaRepo implements NotificationJobsRepoPort {
@@ -36,34 +41,36 @@ export class NotificationJobsPrismaRepo implements NotificationJobsRepoPort {
             id: job.id,
             type: fromDbType(job.type),
             channel: fromDbChannel(job.channel),
+            audience: fromDbAudience(job.audience),
             bookingId: job.bookingId,
             userId: job.userId,
             sendAt: job.sendAt,
             status: fromDbStatus(job.status),
+            readAt: job.readAt ?? null,
             attempts: job.attempts,
             lastError: job.lastError ?? null,
             createdAt: job.createdAt,
             updatedAt: job.updatedAt,
-            readAt: job.readAt ?? null, // ✅
         };
     }
 
     async createManyIgnoreDuplicates(items: CreateJobInput[]) {
         if (items.length === 0) return { attempted: 0 };
 
-        // Prisma 7 + SQLite: skipDuplicates puede no estar tipado => upsert por unique
         for (const it of items) {
             await this.prisma.notificationJob.upsert({
                 where: {
-                    type_bookingId_channel: {
+                    type_bookingId_channel_audience: {
                         type: toDbType(it.type),
                         bookingId: it.bookingId,
                         channel: toDbChannel(it.channel),
+                        audience: toDbAudience(it.audience),
                     },
                 },
                 create: {
                     type: toDbType(it.type),
                     channel: toDbChannel(it.channel),
+                    audience: toDbAudience(it.audience),
                     bookingId: it.bookingId,
                     userId: it.userId,
                     sendAt: it.sendAt,
@@ -143,6 +150,7 @@ export class NotificationJobsPrismaRepo implements NotificationJobsRepoPort {
                 id: true,
                 startAt: true,
                 customerId: true,
+                staffId: true, // ✅ nuevo
                 business: { select: { id: true, timezone: true, isActive: true, status: true } },
             },
         });
@@ -153,24 +161,14 @@ export class NotificationJobsPrismaRepo implements NotificationJobsRepoPort {
             bookingId: b.id,
             startAt: b.startAt,
             customerId: b.customerId,
+            staffId: b.staffId,
             business: b.business,
         };
     }
 
-    // =========================
-    //  IN-APP (campanita)
-    // =========================
-
-    async listForUser(input: {
-        userId: string;
-        page: number;
-        limit: number;
-        status?: NotificationStatus;
-    }) {
-        const where: any = { userId: input.userId };
-
-        // si mandan status, filtra. Si no, tú decides default.
-        if (input.status) where.status = toDbStatus(input.status);
+    // inbox
+    async listForUser(input: { userId: string; page: number; limit: number }) {
+        const where = { userId: input.userId, status: DbStatus.SENT };
 
         const [total, items] = await this.prisma.$transaction([
             this.prisma.notificationJob.count({ where }),
@@ -185,34 +183,19 @@ export class NotificationJobsPrismaRepo implements NotificationJobsRepoPort {
         return { total, items: items.map((x) => this.map(x)) };
     }
 
-    async countUnreadForUser(input: { userId: string }) {
+    async countUnreadForUser(userId: string) {
         return this.prisma.notificationJob.count({
             where: {
-                userId: input.userId,
-                readAt: null,
-                // recomendado: contar solo las enviadas
+                userId,
                 status: DbStatus.SENT,
+                readAt: null,
             },
         });
     }
 
     async markRead(input: { userId: string; jobId: string }) {
-        const job = await this.prisma.notificationJob.findUnique({
-            where: { id: input.jobId },
-            select: { id: true, userId: true, readAt: true },
-        });
-
-        if (!job) return;
-
-        // seguridad: solo dueño
-        if (job.userId !== input.userId) {
-            throw new ForbiddenException({ code: 'FORBIDDEN', message: 'No access' });
-        }
-
-        if (job.readAt) return;
-
-        await this.prisma.notificationJob.update({
-            where: { id: input.jobId },
+        await this.prisma.notificationJob.updateMany({
+            where: { id: input.jobId, userId: input.userId, readAt: null },
             data: { readAt: new Date() },
         });
     }

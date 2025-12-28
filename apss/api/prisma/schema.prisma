@@ -67,6 +67,11 @@ enum NotificationStatus {
   CANCELLED
 }
 
+enum NotificationAudience {
+  CUSTOMER
+  STAFF
+}
+
 enum AuditEntityType {
   BUSINESS
   SERVICE
@@ -416,6 +421,8 @@ model NotificationJob {
   type    NotificationType
   channel NotificationChannel @default(EMAIL)
 
+  audience NotificationAudience @default(CUSTOMER)
+
   bookingId String
   userId    String
 
@@ -433,7 +440,7 @@ model NotificationJob {
   booking Booking @relation(fields: [bookingId], references: [id])
   user    User    @relation(fields: [userId], references: [id])
 
-  @@unique([type, bookingId, channel])
+  @@unique([type, bookingId, channel, audience])
   @@index([status, sendAt])
   @@index([userId])
 }

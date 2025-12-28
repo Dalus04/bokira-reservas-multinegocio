@@ -1,10 +1,16 @@
-import { NotificationChannel, NotificationStatus, NotificationType } from 'src/model/domain/enums/notification';
+import {
+    NotificationAudience,
+    NotificationChannel,
+    NotificationStatus,
+    NotificationType,
+} from 'src/model/domain/enums/notification';
 
 export const NOTIFICATION_JOBS_REPO = Symbol('NOTIFICATION_JOBS_REPO');
 
 export type CreateJobInput = {
     type: NotificationType;
     channel: NotificationChannel;
+    audience: NotificationAudience; // ✅ nuevo
     bookingId: string;
     userId: string;
     sendAt: Date;
@@ -20,17 +26,16 @@ export type NotificationJobDTO = {
     id: string;
     type: NotificationType;
     channel: NotificationChannel;
+    audience: NotificationAudience; // ✅ nuevo
     bookingId: string;
     userId: string;
     sendAt: Date;
     status: NotificationStatus;
+    readAt: Date | null; // ✅ para inbox
     attempts: number;
     lastError: string | null;
     createdAt: Date;
     updatedAt: Date;
-
-    // ✅ in-app
-    readAt?: Date | null;
 };
 
 export interface NotificationJobsRepoPort {
@@ -42,21 +47,17 @@ export interface NotificationJobsRepoPort {
     markFailed(jobId: string, error: string): Promise<void>;
     cancelForBooking(bookingId: string): Promise<void>;
 
-    // Contexto para armar mensajes sin Prisma en use-case
+    // ✅ contexto para mensajes (ahora incluye staffId)
     getBookingNotificationContext(bookingId: string): Promise<{
         bookingId: string;
         startAt: Date;
         customerId: string;
+        staffId: string | null;
         business: { id: string; timezone: string; isActive: boolean; status: string };
     } | null>;
 
-    // IN-APP (campana)
-    listForUser(input: {
-        userId: string;
-        page: number;
-        limit: number;
-        status?: NotificationStatus;
-    }): Promise<{ items: NotificationJobDTO[]; total: number }>;
-    countUnreadForUser(input: { userId: string }): Promise<number>
+    // inbox
+    listForUser(input: { userId: string; page: number; limit: number }): Promise<{ items: NotificationJobDTO[]; total: number }>;
+    countUnreadForUser(userId: string): Promise<number>;
     markRead(input: { userId: string; jobId: string }): Promise<void>;
 }

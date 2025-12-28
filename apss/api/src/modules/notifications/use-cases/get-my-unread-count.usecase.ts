@@ -8,7 +8,7 @@ export class GetMyUnreadCountUseCase {
     ) { }
 
     async exec(input: { userId: string }) {
-        const unreadCount = await this.repo.countUnreadForUser({ userId: input.userId });
+        const unreadCount = await this.repo.countUnreadForUser(input.userId); 
         return { unreadCount };
     }
 }

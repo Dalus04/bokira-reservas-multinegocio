@@ -1,7 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { DateTime } from 'luxon';
+
 import { NOTIFICATION_JOBS_REPO, type NotificationJobsRepoPort } from 'src/model/ports/repositories/notification-jobs.repo.port';
 import { NOTIFICATION_CHANNEL_SENDER, type NotificationChannelSenderPort } from 'src/model/ports/integrations/notification-channel.port';
-import { NotificationChannel, NotificationStatus } from 'src/model/domain/enums/notification';
+import { NotificationAudience, NotificationChannel, NotificationStatus, NotificationType } from 'src/model/domain/enums/notification';
 
 @Injectable()
 export class RunDueNotificationsUseCase {
@@ -21,11 +23,7 @@ export class RunDueNotificationsUseCase {
             sent: 0,
             failed: 0,
             dryRun: input.dryRun,
-            items: [] as Array<{
-                jobId: string;
-                status: NotificationStatus | 'DRY_RUN';
-                error?: string;
-            }>,
+            items: [] as Array<{ jobId: string; status: NotificationStatus | 'DRY_RUN'; error?: string }>,
         };
 
         for (const job of due) {
@@ -39,7 +37,6 @@ export class RunDueNotificationsUseCase {
             try {
                 await this.jobsRepo.markProcessing(job.id);
 
-                // Contexto mínimo para armar mensaje sin Prisma
                 const ctx = await this.jobsRepo.getBookingNotificationContext(job.bookingId);
                 if (!ctx) {
                     await this.jobsRepo.markFailed(job.id, 'BOOKING_CONTEXT_NOT_FOUND');
@@ -48,7 +45,12 @@ export class RunDueNotificationsUseCase {
                     continue;
                 }
 
-                const { title, body } = this.buildMessage(job.type, ctx.startAt, ctx.business.timezone);
+                const { title, body } = this.buildMessage(
+                    job.type,
+                    job.audience as NotificationAudience,
+                    ctx.startAt,
+                    ctx.business.timezone,
+                );
 
                 await this.sender.send({
                     channel: job.channel as NotificationChannel,
@@ -71,27 +73,39 @@ export class RunDueNotificationsUseCase {
         return results;
     }
 
-    private buildMessage(type: any, startAt: Date, timezone: string) {
-        // MVP: texto simple. Luego mejorar con plantillas.
-        const start = startAt.toISOString();
+    private fmtFull12h(startAt: Date, timezone: string) {
+        return DateTime.fromJSDate(startAt, { zone: 'utc' })
+            .setZone(timezone)
+            .setLocale('es')
+            .toFormat("cccc dd 'de' LLLL yyyy, h:mm a");
+    }
 
-        if (type === 'BOOKING_REMINDER_24H') {
+    private buildMessage(type: NotificationType, audience: NotificationAudience, startAt: Date, timezone: string) {
+        const when = this.fmtFull12h(startAt, timezone);
+
+        const isStaff = audience === NotificationAudience.STAFF;
+
+        if (type === NotificationType.BOOKING_REMINDER_24H) {
             return {
-                title: 'Recordatorio de reserva (24h)',
-                body: `Tu reserva es pronto. Fecha/hora: ${start} (tz: ${timezone}).`,
+                title: isStaff ? 'Recordatorio de cita (24h)' : 'Recordatorio de reserva (24h)',
+                body: isStaff
+                    ? `Tienes una cita programada para ${when}.`
+                    : `Tu reserva es pronto: ${when}.`,
             };
         }
 
-        if (type === 'BOOKING_REMINDER_TODAY_8AM') {
+        if (type === NotificationType.BOOKING_REMINDER_TODAY_8AM) {
             return {
-                title: 'Recordatorio de reserva (hoy)',
-                body: `Hoy tienes una reserva. Fecha/hora: ${start} (tz: ${timezone}).`,
+                title: isStaff ? 'Citas de hoy' : 'Reserva de hoy',
+                body: isStaff
+                    ? `Hoy tienes una cita: ${when}.`
+                    : `Hoy tienes una reserva: ${when}.`,
             };
         }
 
         return {
             title: 'Notificación Bokira',
-            body: `Tienes una actualización de tu reserva. Fecha/hora: ${start} (tz: ${timezone}).`,
+            body: isStaff ? `Actualización de tu cita: ${when}.` : `Actualización de tu reserva: ${when}.`,
         };
     }
 }

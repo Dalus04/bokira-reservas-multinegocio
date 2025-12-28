@@ -16,3 +16,8 @@ export enum NotificationStatus {
     FAILED = 'FAILED',
     CANCELLED = 'CANCELLED',
 }
+
+export enum NotificationAudience {
+    CUSTOMER = 'CUSTOMER',
+    STAFF = 'STAFF',
+}

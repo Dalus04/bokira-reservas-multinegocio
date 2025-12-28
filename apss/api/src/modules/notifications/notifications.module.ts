@@ -21,6 +21,7 @@ import { GetMyUnreadCountUseCase } from './use-cases/get-my-unread-count.usecase
 import { MarkNotificationReadUseCase } from './use-cases/mark-notification-read.usecase';
 
 import { NotificationsCron } from './notifications.cron';
+import { NotificationsWorker } from './workers/notifications.worker';
 
 @Module({
     controllers: [NotificationsAdminController, NotificationsController],
@@ -49,6 +50,8 @@ import { NotificationsCron } from './notifications.cron';
 
         // cron worker (AUTO)
         NotificationsCron,
+
+        NotificationsWorker,
     ],
 })
 export class NotificationsModule { }
