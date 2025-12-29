@@ -18,6 +18,7 @@ import { GetBookingUseCase } from './use-cases/get-booking.usecase';
 import { ConfirmBookingUseCase } from './use-cases/confirm-booking.usecase';
 import { CancelBookingUseCase } from './use-cases/cancel-booking.usecase';
 import { RescheduleBookingUseCase } from './use-cases/reschedule-booking.usecase';
+import { CompleteBookingUseCase } from './use-cases/complete-booking.usecase';
 
 @ApiTags('bookings')
 @ApiBearerAuth('bearer')
@@ -30,6 +31,7 @@ export class BookingsController {
         private readonly confirmUC: ConfirmBookingUseCase,
         private readonly cancelUC: CancelBookingUseCase,
         private readonly rescheduleUC: RescheduleBookingUseCase,
+        private readonly completeUC: CompleteBookingUseCase,
     ) { }
 
     @Get()
@@ -116,6 +118,22 @@ export class BookingsController {
             startAt: new Date(dto.startAt),
             staffId: dto.staffId,
             reason: dto.reason ?? null,
+            actorRole: role,
+            actorUserId: user.sub,
+        });
+    }
+
+    @Post(':bookingId/complete')
+    @ApiOperation({ summary: 'Complete booking (CONFIRMED -> COMPLETED)' })
+    complete(
+        @Param('businessId') businessId: string,
+        @Param('bookingId') bookingId: string,
+        @CurrentUser() user: JwtUserPayload,
+        @CurrentBusinessRole() role: CBR,
+    ) {
+        return this.completeUC.exec({
+            businessId,
+            bookingId,
             actorRole: role,
             actorUserId: user.sub,
         });

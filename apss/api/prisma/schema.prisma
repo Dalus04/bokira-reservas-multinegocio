@@ -365,6 +365,8 @@ model Booking {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  completedAt DateTime?
+
   customer User  @relation("BookingCustomer", fields: [customerId], references: [id])
   staff    User? @relation("BookingStaff", fields: [staffId], references: [id])
 
@@ -379,6 +381,7 @@ model Booking {
   @@index([customerId, startAt])
   @@index([serviceId, startAt])
   @@index([businessId, status, startAt])
+  @@index([businessId, completedAt])
 }
 
 // =====================================
@@ -482,6 +485,7 @@ model LoyaltyEvent {
 
   account LoyaltyAccount @relation(fields: [accountId], references: [id])
 
+  @@unique([bookingId, reason])
   @@index([accountId, createdAt])
   @@index([bookingId])
 }

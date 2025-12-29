@@ -43,6 +43,8 @@ export interface BookingsRepoPort {
         ownerConfirmNote?: string | null;
         ownerCancelReason?: string | null;
         ownerRescheduleReason?: string | null;
+
+        completedAt?: Date | null;
     }): Promise<Booking>;
 
     updateTimes(params: {

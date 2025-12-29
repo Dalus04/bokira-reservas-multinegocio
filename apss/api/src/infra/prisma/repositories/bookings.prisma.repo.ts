@@ -62,13 +62,10 @@ export class BookingsPrismaRepo implements BookingsRepoPort {
             businessId: params.businessId,
             status: { in: blockingStatuses },
             id: params.excludeBookingId ? { not: params.excludeBookingId } : undefined,
-            // overlap condition:
             startAt: { lt: params.endAt },
             endAt: { gt: params.startAt },
         };
 
-        // Si viene staffId => solape en ese staff
-        // Si no viene staffId => solape “a nivel negocio”
         if (params.staffId) where.staffId = params.staffId;
 
         const found = await this.prisma.booking.findFirst({ where, select: { id: true } });
@@ -83,6 +80,7 @@ export class BookingsPrismaRepo implements BookingsRepoPort {
         ownerConfirmNote?: string | null;
         ownerCancelReason?: string | null;
         ownerRescheduleReason?: string | null;
+        completedAt?: Date | null;
     }) {
         const row = await this.prisma.booking.update({
             where: { id: params.bookingId },
@@ -92,6 +90,7 @@ export class BookingsPrismaRepo implements BookingsRepoPort {
                 ownerConfirmNote: params.ownerConfirmNote ?? undefined,
                 ownerCancelReason: params.ownerCancelReason ?? undefined,
                 ownerRescheduleReason: params.ownerRescheduleReason ?? undefined,
+                completedAt: params.completedAt ?? undefined, 
             },
         });
 
@@ -115,6 +114,7 @@ export class BookingsPrismaRepo implements BookingsRepoPort {
                 status: 'PENDING',
                 statusUpdatedById: params.statusUpdatedById,
                 ownerRescheduleReason: params.ownerRescheduleReason ?? null,
+                completedAt: null, 
             },
         });
 
