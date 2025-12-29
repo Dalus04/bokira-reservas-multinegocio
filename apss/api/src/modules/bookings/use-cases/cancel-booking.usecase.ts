@@ -37,6 +37,7 @@ export class CancelBookingUseCase {
             bookingCancelledEvent({
                 bookingId: updated.id,
                 businessId: updated.businessId,
+                actorUserId: input.actorUserId,
             }),
         );
 

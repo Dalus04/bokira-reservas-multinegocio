@@ -37,6 +37,7 @@ export class ConfirmBookingUseCase {
             bookingConfirmedEvent({
                 bookingId: updated.id,
                 businessId: updated.businessId,
+                actorUserId: input.actorUserId,
             }),
         );
 

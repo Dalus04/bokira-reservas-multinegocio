@@ -1,0 +1,27 @@
+export enum AuditEntityType {
+    BUSINESS = 'BUSINESS',
+    SERVICE = 'SERVICE',
+    BOOKING = 'BOOKING',
+    REVIEW = 'REVIEW',
+    MEMBER = 'MEMBER',
+    HOURS = 'HOURS',
+    TIME_OFF = 'TIME_OFF',
+    NOTIFICATION_JOB = 'NOTIFICATION_JOB',
+    LOYALTY = 'LOYALTY',
+}
+
+export enum AuditAction {
+    CREATE = 'CREATE',
+    UPDATE = 'UPDATE',
+    DELETE = 'DELETE',
+    SUBMIT_REVIEW = 'SUBMIT_REVIEW',
+    APPROVE = 'APPROVE',
+    REJECT = 'REJECT',
+    SUSPEND = 'SUSPEND',
+    CANCEL = 'CANCEL',
+    CONFIRM = 'CONFIRM',
+    COMPLETE = 'COMPLETE',
+    NO_SHOW = 'NO_SHOW',
+    RESCHEDULE = 'RESCHEDULE',
+    ASSIGN_STAFF = 'ASSIGN_STAFF',
+}

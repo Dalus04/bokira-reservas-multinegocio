@@ -16,6 +16,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 import { EventsModule } from './common/events/events.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { LoyaltyModule } from './modules/loyalty/loyalty.module';
+import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { LoyaltyModule } from './modules/loyalty/loyalty.module';
     ServiceCategoriesModule,
     ReviewsModule,
     LoyaltyModule,
+    AuditLogsModule,
   ],
 })
 export class AppModule { }

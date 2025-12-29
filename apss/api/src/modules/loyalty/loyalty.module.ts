@@ -10,7 +10,7 @@ import { GetMyLoyaltyUseCase } from './use-cases/get-my-loyalty.usecase';
 import { ListMyLoyaltyAccountsUseCase } from './use-cases/list-my-loyalty-accounts.usecase';
 import { ListBusinessLoyaltyAccountsUseCase } from './use-cases/list-business-loyalty-accounts.usecase';
 
-import { LoyaltyEventsSubscriber } from './suscribers/loyalty-events.subscriber';
+import { LoyaltyEventsSubscriber } from './subscribers/loyalty-events.subscriber';
 
 @Module({
     controllers: [LoyaltyController, LoyaltyBusinessController],

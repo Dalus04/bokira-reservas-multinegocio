@@ -73,8 +73,10 @@ export class CreateBookingPublicUseCase {
             bookingCreatedEvent({
                 bookingId: created.id,
                 businessId: created.businessId,
+                actorUserId: input.customerId, // en public create, el actor es el customer
             }),
         );
+
 
         return created;
     }

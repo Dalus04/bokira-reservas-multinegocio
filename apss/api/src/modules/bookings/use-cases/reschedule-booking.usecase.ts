@@ -74,6 +74,7 @@ export class RescheduleBookingUseCase {
             bookingRescheduledEvent({
                 bookingId: updated.id,
                 businessId: updated.businessId,
+                actorUserId: input.actorUserId,
             }),
         );
 
